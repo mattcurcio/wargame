@@ -34,12 +34,24 @@ def init_world() -> WorldState:
         econ=START_ECON.copy(),
         trust={p: t.copy() for p, t in START_TRUST.items()},
         contracts=[],
+        research_progress={p: 0 for p in START_ECON.keys()},
+        sanctions={p: 0 for p in START_ECON.keys()},
+        next_income_multiplier={p: 1.0 for p in START_ECON.keys()},
+        last_turn_peaceful=False,
     )
 
 def income_phase(ws: WorldState) -> None:
+    # Apply income with any pending next-turn multipliers (e.g., fallout effects)
     for node in ws.nodes.values():
         if node.owner:
-            ws.econ[node.owner] = ws.econ.get(node.owner, 0) + node.income
+            owner = node.owner
+            base = node.income
+            mult = ws.next_income_multiplier.get(owner, 1.0)
+            add = int(base * mult)
+            ws.econ[owner] = ws.econ.get(owner, 0) + add
+    # Reset multipliers after income applied
+    for p in list(ws.next_income_multiplier.keys()):
+        ws.next_income_multiplier[p] = 1.0
 
 def set_defcon(ws: WorldState, value: int) -> None:
     ws.defcon = max(1, min(5, value))

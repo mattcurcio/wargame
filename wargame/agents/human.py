@@ -18,46 +18,11 @@ class HumanAgent:
         actions: List[Action] = []
 
         cheat = self._load_cheat_sheet()
-
-        def parse_command(s: str) -> Optional[Action]:
-            tok = s.strip().upper().split()
-            if not tok:
-                return None
-            cmd = tok[0]
-            if cmd == "BUILD":
-                cmd = "BUILD_ECON"
-            if cmd == "MIL":
-                cmd = "BUILD_MIL"
-            if cmd == "TAKE":
-                cmd = "ANNEX"
-            if cmd == "ATTACK":
-                cmd = "STRIKE"
-            try:
-                if cmd == "BUILD_ECON":
-                    return Action(actor=self.player_id, type="BUILD_ECON")
-                if cmd == "BUILD_MIL":
-                    node = tok[1]
-                    return Action(actor=self.player_id, type="BUILD_MIL", node=node)
-                if cmd == "ANNEX":
-                    frm, to, amt = tok[1], tok[2], int(tok[3])
-                    return Action(actor=self.player_id, type="ANNEX", from_node=frm, to_node=to, amount=amt)
-                if cmd == "STRIKE":
-                    frm, to, amt = tok[1], tok[2], int(tok[3])
-                    return Action(actor=self.player_id, type="STRIKE", from_node=frm, to_node=to, amount=amt)
-                if cmd == "MOVE":
-                    frm, to, amt = tok[1], tok[2], int(tok[3])
-                    return Action(actor=self.player_id, type="MOVE", from_node=frm, to_node=to, amount=amt)
-                if cmd == "HELP":
-                    print(cheat)
-                    return None
-                if cmd in ("NONE", ""):
-                    return None
-            except Exception:
-                return None
-            return None
+        # use shared parser and example generator from wargame.cli
+        from ..cli import parse_command, generate_legal_examples
 
         # show a few legal examples
-        examples = self._generate_legal_examples(ws)
+        examples = generate_legal_examples(ws, self.player_id)
         if examples:
             print("Examples:")
             for ex in examples:
@@ -72,9 +37,10 @@ class HumanAgent:
                     raw = ""
                 if not raw.strip():
                     break
-                parsed = parse_command(raw)
+                parsed = parse_command(raw, ws, self.player_id)
                 if parsed is None:
                     if raw.strip().upper() == "HELP":
+                        print(cheat)
                         continue
                     print("Could not parse command. Type HELP to see grammar examples.")
                     continue

@@ -101,8 +101,8 @@ def print_turn(ws, actions_by_player):
     owners = ", ".join([f"{nid}:{node.owner or 'Neutral'}" for nid, node in ws.nodes.items()])
     mils   = ", ".join([f"{nid}:{node.stationed_mil}" for nid, node in ws.nodes.items()])
     econ   = ", ".join([f"{p}:{v}" for p, v in ws.econ.items()])
-    print("Owners:", owners)
-    print("Mil   :", mils)
+    # print("Owners:", owners)
+    # print("Mil   :", mils)
     print("Econ  :", econ)
 
 
@@ -140,5 +140,44 @@ def scoreboard_str(ws: WorldState) -> str:
     econ_part = ", ".join([f"{p}={econ_vals.get(p,0)}" for p in players])
     mil_part  = ", ".join([f"{p}={mil_totals.get(p,0)}" for p in players])
 
+    # Include econ in the compact scoreboard so end-of-turn summaries show it
     lines = [f"Territories: {terr_part}", f"Econ: {econ_part}", f"Mil (total): {mil_part}"]
     return "\n".join(lines)
+
+
+def render_visual(ws: WorldState) -> str:
+    """Render a compact ASCII visual of the map and node status.
+
+    Uses ANSI colors to denote different players. Returns a multi-line string
+    suitable for printing.
+    """
+    RESET = "\u001b[0m"
+    COLORS = ["\u001b[31m", "\u001b[32m", "\u001b[33m", "\u001b[34m", "\u001b[35m", "\u001b[36m"]
+
+    # Determine player list (alphabetical) for consistent coloring
+    players = sorted({p for p in ws.econ.keys()} | {n.owner for n in ws.nodes.values() if n.owner})
+
+    color_for = {}
+    for i, p in enumerate(players):
+        color_for[p] = COLORS[i % len(COLORS)]
+
+    def node_str(nid: str, node) -> str:
+        owner = node.owner
+        mil = node.stationed_mil
+        if owner:
+            col = color_for.get(owner, "")
+            return f"{col}{nid}:{owner[:3]}({mil}){RESET}"
+        else:
+            # neutral gray
+            return f"\u001b[90m{nid}:Neutral({mil}){RESET}"
+
+    # Keep node order stable: sort by node id string
+    parts = [node_str(nid, ws.nodes[nid]) for nid in sorted(ws.nodes.keys())]
+    # Join with arrows to indicate adjacency (simple linear map style)
+    line = " -> ".join(parts)
+
+    # Legend
+    legend_parts = [f"{color_for[p]}{p}{RESET}" for p in players]
+    legend = "Players: " + ", ".join(legend_parts) if players else "Players: (none)"
+
+    return line + "\n" + legend

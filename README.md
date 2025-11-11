@@ -38,6 +38,9 @@ Files of interest
 - `wargame/run_match.py` — CLI runner for matches
 - `wargame/demo_human.py` — scripted demo runner
 
+Cheat sheet
+- The human-friendly cheat sheet (with NUCLEAR and DEFCON guidance) is available as `CHEATSHEET.md` in the repo root and as `wargame/Grammar.txt` for the packaged copy. Use `HELP` in the interactive prompt to print it.
+
 Contributing
 - See `CONTRIBUTING.md` for notes on engine phases and resolver semantics.
 

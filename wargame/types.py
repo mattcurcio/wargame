@@ -6,7 +6,8 @@ PlayerID = str
 NodeID = Literal["A", "B", "C", "D", "E"]  # MVP linear map
 ActionType = Literal[
     "BUILD_ECON", "BUILD_MIL", "MOVE", "ANNEX", "STRIKE", "SPY",
-    "DEESCALATE", "MOBILIZE", "OFFER", "ACCEPT", "REJECT"
+    "DEESCALATE", "MOBILIZE", "OFFER", "ACCEPT", "REJECT", "NUCLEAR",
+    "PREP_NUKE"
 ]
 
 @dataclass
@@ -40,6 +41,16 @@ class WorldState:
     econ: Dict[PlayerID, int]
     trust: Dict[PlayerID, Dict[PlayerID, float]]
     contracts: List[Contract] = field(default_factory=list)
+    # Event log for the turn (append-only; resolver may populate with notable events)
+    events: List[str] = field(default_factory=list)
+    # Nuclear research progress (counts turns of PREP_NUKE); when >=2 considered completed
+    research_progress: Dict[PlayerID, int] = field(default_factory=dict)
+    # Sanctions: number of turns a player is sanctioned (cannot BUILD_ECON or DEESCALATE)
+    sanctions: Dict[PlayerID, int] = field(default_factory=dict)
+    # Next-turn income multiplier (e.g., 0.9 after nuclear)
+    next_income_multiplier: Dict[PlayerID, float] = field(default_factory=dict)
+    # Whether the previous turn was peaceful (no STRIKE/ANNEX)
+    last_turn_peaceful: bool = False
 
 @dataclass
 class OfferProposal:
