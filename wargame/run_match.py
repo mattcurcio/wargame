@@ -72,7 +72,9 @@ if __name__ == "__main__":
             if hid in agents:
                 agents[hid] = "HUMAN"
 
-    final_state = run_headless_match(agents, max_turns=args.turns, debug=args.debug, player_view=args.player)
+    final_state = run_headless_match(
+        agents, max_turns=args.turns, debug=args.debug, player_view=args.player, visual=args.visual
+    )
     print("\nFinal state:\n", full_state_str(final_state) if args.debug else (player_view_str(final_state, args.player) if args.player else final_state))
 
 
