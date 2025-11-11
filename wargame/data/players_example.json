@@ -1,0 +1,5 @@
+{
+  "Astra": {"aggression": 0.7, "deviousness": 0.4, "risk": 0.6, "prio_mil": 0.6, "prio_econ": 0.3, "prio_diplo": 0.1},
+  "Borealis": {"aggression": 0.3, "deviousness": 0.4, "risk": 0.5, "prio_mil": 0.3, "prio_econ": 0.4, "prio_diplo": 0.3},
+  "Cinder": {"aggression": 0.5, "deviousness": 0.3, "risk": 0.4, "prio_mil": 0.4, "prio_econ": 0.4, "prio_diplo": 0.2}
+}

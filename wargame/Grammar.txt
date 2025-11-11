@@ -1,0 +1,46 @@
+# Wargame MVP - Player Cheat Sheet (packaged copy)
+
+Commands (one per line). You may enter up to two actions per turn.
+
+BUILD_ECON
+  - Build national economy (no args).
+
+BUILD_MIL <NODE>
+  - Train/build one military unit at a node you own.
+
+MOVE <FROM> <TO> <AMOUNT>
+  - Move AMOUNT units from node FROM to adjacent node TO.
+  - MOVE is only allowed between nodes you own. Nodes must be adjacent.
+  - AMOUNT must be a positive integer and cannot exceed stationed units at FROM.
+
+ANNEX <FROM> <TO> <AMOUNT>
+  - Attempt to annex a neutral node TO from your owned node FROM using AMOUNT units.
+  - To succeed you generally need AMOUNT > neutral_defense (and larger AMOUNT wins in contests).
+  - If multiple players ANNEX the same neutral node in the same turn, highest AMOUNT wins; ties are broken reproducibly by RNG and losers each lose 1 unit.
+
+STRIKE <FROM> <TO> <AMOUNT>
+  - Attack an enemy-owned node TO from your owned node FROM using AMOUNT units.
+  - Resolves in the combat phase; careful with overcommitting your forces.
+
+ALIASES
+  BUILD  -> BUILD_ECON
+  MIL    -> BUILD_MIL
+  TAKE   -> ANNEX
+  ATTACK -> STRIKE
+
+HELP
+  - Print this cheat sheet.
+
+NONE or blank
+  - Skip this action slot.
+
+EXAMPLES
+  BUILD_ECON
+  BUILD_MIL A
+  MOVE A B 1
+  ANNEX A B 3
+  STRIKE A B 2
+
+Notes
+  - The prompt validates common mistakes (for example MOVE destinations that you don't own are rejected).
+  - Use integer AMOUNT values. If you type an invalid command the prompt will tell you and let you retry or type HELP.
