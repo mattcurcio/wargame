@@ -5,7 +5,7 @@ from .types import WorldState, Action
 from .engine.state import init_world, LINEAR_EDGES
 from .engine.resolver import resolve_turn
 from .engine.rules import validate_action
-from .engine.utils import print_turn, full_state_str, player_view_str, render_visual
+from .engine.utils import print_turn, full_state_str, player_view_str, render_visual, scoreboard_str
 from .agents.human import HumanAgent, ScriptedHumanAgent
 
 
@@ -41,6 +41,11 @@ def run_headless_match(
         if visual:
             print(render_visual(ws))
         ws = resolve_turn(ws, actions_by_player)
+        # post-turn logging: concise scoreboard and optional visual of the updated state
+        print(f"\n--- End of Turn {ws.turn - 1} Summary ---")
+        print(scoreboard_str(ws))
+        if visual:
+            print(render_visual(ws))
         # post-turn state print
         if debug:
             print("\n[DEBUG STATE]\n" + full_state_str(ws))
