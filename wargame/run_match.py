@@ -5,12 +5,12 @@ from .types import WorldState, Action
 from .engine.state import init_world, LINEAR_EDGES
 from .engine.resolver import resolve_turn
 from .engine.rules import validate_action
-from .engine.utils import print_turn, full_state_str, player_view_str
+from .engine.utils import print_turn, full_state_str, player_view_str, render_visual
 from .agents.human import HumanAgent, ScriptedHumanAgent
 
 
 def run_headless_match(
-    agents: Dict[str, object], max_turns: int = 6, debug: bool = False, player_view: Optional[str] = None
+    agents: Dict[str, object], max_turns: int = 6, debug: bool = False, player_view: Optional[str] = None, visual: bool = False
 ) -> WorldState:
     """Run a headless match.
 
@@ -38,6 +38,8 @@ def run_headless_match(
                 actions = agent.decide(ws)
                 actions_by_player[pid] = actions
         print_turn(ws, actions_by_player)
+        if visual:
+            print(render_visual(ws))
         ws = resolve_turn(ws, actions_by_player)
         # post-turn state print
         if debug:
@@ -52,6 +54,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", action="store_true", help="print full debug state each turn")
     parser.add_argument("--player", type=str, help="print player-specific view each turn")
+    parser.add_argument("--visual", action="store_true", help="print enhanced ASCII visuals each turn")
     parser.add_argument("--turns", type=int, default=6, help="number of turns to run")
     parser.add_argument("--human", action="append", help="player id to control as human; can be repeated")
     args = parser.parse_args()
