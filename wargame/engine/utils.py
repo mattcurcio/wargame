@@ -101,8 +101,8 @@ def print_turn(ws, actions_by_player):
     owners = ", ".join([f"{nid}:{node.owner or 'Neutral'}" for nid, node in ws.nodes.items()])
     mils   = ", ".join([f"{nid}:{node.stationed_mil}" for nid, node in ws.nodes.items()])
     econ   = ", ".join([f"{p}:{v}" for p, v in ws.econ.items()])
-    print("Owners:", owners)
-    print("Mil   :", mils)
+    # print("Owners:", owners)
+    # print("Mil   :", mils)
     print("Econ  :", econ)
 
 
@@ -140,6 +140,7 @@ def scoreboard_str(ws: WorldState) -> str:
     econ_part = ", ".join([f"{p}={econ_vals.get(p,0)}" for p in players])
     mil_part  = ", ".join([f"{p}={mil_totals.get(p,0)}" for p in players])
 
+    # Include econ in the compact scoreboard so end-of-turn summaries show it
     lines = [f"Territories: {terr_part}", f"Econ: {econ_part}", f"Mil (total): {mil_part}"]
     return "\n".join(lines)
 

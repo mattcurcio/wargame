@@ -5,6 +5,7 @@ from .types import WorldState, Action
 from .engine.state import init_world, LINEAR_EDGES
 from .engine.resolver import resolve_turn
 from .engine.rules import validate_action
+from .cli import parse_command, generate_legal_examples
 from .engine.utils import print_turn, full_state_str, player_view_str, render_visual, scoreboard_str
 from .agents.human import HumanAgent, ScriptedHumanAgent
 
@@ -42,8 +43,28 @@ def run_headless_match(
             print(render_visual(ws))
         ws = resolve_turn(ws, actions_by_player)
         # post-turn logging: concise scoreboard and optional visual of the updated state
-        print(f"\n--- End of Turn {ws.turn - 1} Summary ---")
+        print(f"\n--- End of Turn {ws.turn - 1} Summary | DEFCON {ws.defcon} ---")
         print(scoreboard_str(ws))
+        # Print any notable events (nuclear launches, etc.) that happened during the turn
+        if getattr(ws, "events", None):
+            RED = "\u001b[31;1m"
+            RESET = "\u001b[0m"
+            print("\nEvents:")
+            for e in ws.events:
+                # Pretty-highlight nuclear events so they stand out to humans
+                if "NUCLEAR" in e.upper():
+                    try:
+                        print(RED + "!!! NUCLEAR EVENT !!!" + RESET)
+                        print(RED + "  - " + e + RESET)
+                    except Exception:
+                        print("  -", e)
+                else:
+                    print("  -", e)
+            # Clear events after printing so they don't repeat next turn
+            try:
+                ws.events.clear()
+            except Exception:
+                pass
         if visual:
             print(render_visual(ws))
         # post-turn state print
@@ -158,6 +179,29 @@ def generate_legal_examples(ws: WorldState, player: str, max_examples: int = 3) 
                     examples.append(cmd)
                     if len(examples) >= max_examples:
                         return examples
+    # NUCLEAR: suggest targets if allowed (show after conventional examples)
+    # suggest enemy/neutral nodes that validate as legal NUCLEAR targets
+    # NUCLEAR: suggest targets if allowed (show after conventional examples)
+    # Suggest enemy/neutral nodes that validate as legal NUCLEAR targets. Since
+    # the interactive grammar allows omitting a FROM launch-site, attempt to
+    # auto-select a valid launch site (owned node with >=3 mil) when validating
+    # examples so the human sees only actually-legal suggestions.
+    for node_id, node in ws.nodes.items():
+        if node.owner == player:
+            continue
+        # find a candidate launch site owned by player with enough mil
+        launch_site = None
+        for nid, n in ws.nodes.items():
+            if n.owner == player and n.stationed_mil >= 3:
+                launch_site = nid
+                break
+        candidate = Action(actor=player, type="NUCLEAR", to_node=node_id, from_node=launch_site)
+        ok, _ = validate_action(ws, candidate)
+        if ok:
+            examples.append(f"NUCLEAR {node_id}")
+            if len(examples) >= max_examples:
+                return examples[:max_examples]
+
     return examples[:max_examples]
 
 
@@ -169,44 +213,7 @@ def prompt_for_two_actions(ws: WorldState, player: str) -> List[Action]:
     cheat = _load_cheat_sheet()
     actions: List[Action] = []
 
-    def parse_command(s: str) -> Optional[Action]:
-        tok = s.strip().upper().split()
-        if not tok:
-            return None
-        cmd = tok[0]
-        # aliases
-        if cmd == "BUILD":
-            cmd = "BUILD_ECON"
-        if cmd == "MIL":
-            cmd = "BUILD_MIL"
-        if cmd == "TAKE":
-            cmd = "ANNEX"
-        if cmd == "ATTACK":
-            cmd = "STRIKE"
-
-        try:
-            if cmd in ("BUILD_ECON",):
-                return Action(actor=player, type="BUILD_ECON")
-            if cmd == "BUILD_MIL":
-                node = tok[1]
-                return Action(actor=player, type="BUILD_MIL", node=node)
-            if cmd == "ANNEX":
-                frm, to, amt = tok[1], tok[2], int(tok[3])
-                return Action(actor=player, type="ANNEX", from_node=frm, to_node=to, amount=amt)
-            if cmd == "STRIKE":
-                frm, to, amt = tok[1], tok[2], int(tok[3])
-                return Action(actor=player, type="STRIKE", from_node=frm, to_node=to, amount=amt)
-            if cmd == "MOVE":
-                frm, to, amt = tok[1], tok[2], int(tok[3])
-                return Action(actor=player, type="MOVE", from_node=frm, to_node=to, amount=amt)
-            if cmd == "HELP":
-                print(cheat)
-                return None
-            if cmd in ("NONE", ""):
-                return None
-        except Exception:
-            return None
-        return None
+    # use shared parser (caller handles printing HELP)
 
     # show a few legal examples based on current state
     examples = generate_legal_examples(ws, player)
@@ -224,10 +231,11 @@ def prompt_for_two_actions(ws: WorldState, player: str) -> List[Action]:
                 raw = ""
             if not raw.strip():
                 break
-            parsed = parse_command(raw)
+            parsed = parse_command(raw, ws, player)
             if parsed is None:
-                # either HELP was shown or parse error
+                # either HELP was requested or parse error
                 if raw.strip().upper() == "HELP":
+                    print(cheat)
                     continue
                 print("Could not parse command. Type HELP to see grammar examples.")
                 continue
@@ -236,6 +244,12 @@ def prompt_for_two_actions(ws: WorldState, player: str) -> List[Action]:
                 dest = parsed.to_node
                 if dest is None or ws.nodes.get(dest) is None or ws.nodes[dest].owner != player:
                     print(f"Invalid MOVE: destination {dest} is not owned by {player}. Move only between owned nodes.")
+                    continue
+            # Validate NUCLEAR immediately so the human gets feedback
+            if parsed.type == "NUCLEAR":
+                ok, msg = validate_action(ws, parsed)
+                if not ok:
+                    print(f"Invalid NUCLEAR: {msg}")
                     continue
             # attach actor already set in parse
             actions.append(parsed)
